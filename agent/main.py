@@ -10,20 +10,11 @@ from tests.test import BOILER_TEST, TEST_CASE_1, TEST_CASE_3
 
 logger = logging.getLogger(__name__)
 
+#TODO: Incorporate the guardrails into 1. The system prompt or 2. Guardrails as defined by Langchain.
 
 def setup_logging():
     level = logging.DEBUG if os.getenv("DEBUG") == "1" else logging.INFO
     logging.basicConfig(level=level, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
-
-@tool
-def get_weather(location: str):
-    """Returns the weather in a given location.
-
-    Args:
-        location: The location for which weather information is required.
-    """
-    logger.info("Tool get_weather called with location=%s", location)
-    return f"The weather in {location} is cloudy with a chance of meatballs."
 
 @tool
 def search_arxiv(query: str):
@@ -66,10 +57,10 @@ def main():
     # Create the agent
     graph = create_agent(
     model=model,
-    tools=[get_weather, search_arxiv],
+    tools=[search_arxiv],
     system_prompt=SYSTEM_PROMPT)
 
-    # Run the agent for weather tool.
+    # Run the agent for a weather based query.
     inputs = {"messages": [{"role": "user", "content": BOILER_TEST}]}
     for chunk in graph.stream(inputs, stream_mode="updates"):
         print(chunk)
