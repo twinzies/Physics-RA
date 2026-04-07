@@ -1,4 +1,5 @@
 .history
 .env
+__pycache__/
 
 MLE-project.pdf
