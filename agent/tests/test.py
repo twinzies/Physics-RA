@@ -1,3 +1,4 @@
+BOILER_TEST = "What is the weather like in Sheffield?"
 TEST_CASE_1 = "Explain Maxwell's equations to me."
 
 TEST_CASE_2 = "I have a theory that the Higgs Boson circles God, and all quanta are thus unified by spirituality. What do you think about my model?"
