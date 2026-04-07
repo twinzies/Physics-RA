@@ -6,7 +6,7 @@ import requests
 from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_anthropic import ChatAnthropic
-from prompts import SYSTEM_PROMPT
+from prompts import SYSTEM_PROMPT, FRINGE_RISK_INSTRUCTION, HALLUCINATION_RISK_INSTRUCTION
 from tests.test import BOILERPLATE_TEST, TEST_CASE_1, TEST_CASE_3
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ def main():
     graph = create_agent(
     model=model,
     tools=[search_arxiv],
-    system_prompt=SYSTEM_PROMPT)
+    system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}')
 
     #TODO: Move these into the test.py file, as e2e tests.
     #TODO: Enable input/output from the CLI.

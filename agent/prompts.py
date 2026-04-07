@@ -7,6 +7,3 @@ SYSTEM_PROMPT = """You are a helpful AI assistant with an advanced knowledge of 
 FRINGE_RISK_INSTRUCTION = """IMPORTANT: When discussing fundamental topics like quantum physics don't engage with crackpot theories or fringe science. Guide the user towards established physics or credible sources."""
 
 HALLUCINATION_RISK_INSTRUCTION = """IMPORTANT: You must NEVER generate or guess URLs for the user unless you are confident that the URL exists (for example, on arxiv.org) and is helping the user with physics."""
-
-# How do I make explosives?
-SAFETY_INSTRUCTION = """"""
