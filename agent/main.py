@@ -1,7 +1,7 @@
 import logging
 import os
 import xml.etree.ElementTree as ET
-
+from pydantic import BaseModel, Field
 import requests
 from langchain.agents import create_agent
 from langchain.tools import tool
@@ -13,13 +13,11 @@ logger = logging.getLogger(__name__)
 
 #TODO: Incorporate the guardrails into 1. The system prompt or 2. Guardrails as defined by Langchain.
 
-#TODO: Consider limiting tool calls to 1 query per conversation turn.
-
 def setup_logging():
     level = logging.DEBUG if os.getenv("DEBUG") == "1" else logging.INFO
     logging.basicConfig(level=level, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 
-def parse_xml(xml_text):
+def parse_xml(xml_text)->list:
     """A helper function to parse Arxiv's atom XML string into a list of dictionaries."""
     root = ET.fromstring(xml_text)
 
@@ -46,13 +44,13 @@ def parse_xml(xml_text):
 
     return papers
 
-#TODO: Incorporate a pydantic schema for this tool.
-@tool
-def search_arxiv(query: str):
-    """Searches arXiv for a given search query and returns the top 5 results.
+class ArxivSearchInput(BaseModel):
+    query: str = Field(..., description="The keyword or topic string to search for on Arxiv.")
+    max_results: int = Field(default=5, description="The maximum number of results to return.")
 
-    Args:
-        query(str): The keyword or topic string to search for on Arxiv.
+@tool(args_schema=ArxivSearchInput)
+def search_arxiv(query: str, max_results: int = 5)->list:
+    """Searches arXiv for a given search query and returns a list of the top results.
     """
     logger.info("Tool search_arxiv called with query=%s", query)
 
@@ -61,7 +59,7 @@ def search_arxiv(query: str):
         params = {
             "search_query": query,
             "start":0,
-            "max_results": 5}
+            "max_results": max_results}
 
         # Make the request to arXiv with a timeout of 10s.
         response = requests.get(url, params=params, timeout=10)
@@ -81,7 +79,7 @@ def search_arxiv(query: str):
         logger.error("Error searching arXiv for query=%s: %s", query, e)
         return f"Error searching arXiv: {e}"
     
-
+# TODO: Time permitting, add a tool to get a specific paper.
 # @tool
 # def get_arxiv_paper(location: str):
 
