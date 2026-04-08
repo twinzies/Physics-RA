@@ -1,12 +1,17 @@
 import logging
 import os
 import xml.etree.ElementTree as ET
-from pydantic import BaseModel, Field
+
 import requests
 from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_anthropic import ChatAnthropic
-from prompts import SYSTEM_PROMPT, FRINGE_RISK_INSTRUCTION, HALLUCINATION_RISK_INSTRUCTION
+from prompts import (
+    FRINGE_RISK_INSTRUCTION,
+    HALLUCINATION_RISK_INSTRUCTION,
+    SYSTEM_PROMPT,
+)
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +99,7 @@ def main():
     tools=[search_arxiv],
     system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}') # Guardrails included within the system prompt.
 
-    logger.info("Agent initialized with model=%s", model)
+    logger.info("Agent initialized with model: %s", model.model)
 
     # TODO: Enable input/output from the CLI.
 

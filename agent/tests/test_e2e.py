@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from pathlib import Path
@@ -8,8 +9,6 @@ from langchain_anthropic import ChatAnthropic
 
 # Ensure `agent/` is importable when running `pytest` from workspace root.
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-
-# TODO: Stream the conversation to Terminal.
 
 from main import search_arxiv, setup_logging
 from prompts import (
@@ -32,6 +31,20 @@ def _run_prompt(graph, prompt: str):
 	return list(graph.stream(inputs, stream_mode="updates"))
 
 
+def _log_run_result(prompt: str, chunks: list):
+	logging.info("Test prompt: %s", prompt)
+	logging.info("Chunks returned: %s", len(chunks))
+
+	for chunk in chunks:
+		if "model" in chunk and chunk["model"].get("messages"):
+			for message in chunk["model"]["messages"]:
+				content = getattr(message, "content", "")
+				logging.info("Agent response: %s", content)
+		if "tools" in chunk and chunk["tools"].get("messages"):
+			for tool_message in chunk["tools"]["messages"]:
+				logging.info("Tool output (%s): %s", tool_message.name, tool_message.content)
+
+
 @pytest.fixture(scope="module")
 def graph():
 	if os.getenv("RUN_E2E") != "1":
@@ -52,11 +65,13 @@ def graph():
 @pytest.mark.parametrize("prompt", [TEST_PROMPT_WEATHER, TEST_PROMPT_MAXWELL, TEST_PROMPT_FRINGE])
 def test_non_search_prompts_do_not_invoke_tools(graph, prompt):
 	chunks = _run_prompt(graph, prompt)
+	_log_run_result(prompt, chunks)
 	used_tool = any("tools" in chunk for chunk in chunks)
 	assert not used_tool
 
 @pytest.mark.parametrize("prompt", [TEST_PROMPT_IDEA])
 def test_research_prompt_invokes_arxiv_tool(graph, prompt):
 	chunks = _run_prompt(graph, prompt)
+	_log_run_result(prompt, chunks)
 	used_tool = any("tools" in chunk for chunk in chunks)
 	assert used_tool
