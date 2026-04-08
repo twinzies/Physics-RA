@@ -87,6 +87,31 @@ def search_arxiv(query: str, max_results: int = 5)->list:
 # @tool
 # def get_arxiv_paper(location: str):
 
+def chat(message, agent):
+    inputs = {"messages": [{"role": "user", "content": message}]}
+    final_response = ""
+    print("Agent: ", end="", flush=True)
+
+    for model_chunk, _ in agent.stream(inputs, stream_mode="messages"):
+        content = getattr(model_chunk, "content", "")
+        if isinstance(content, str) and content:
+            print(content, end="", flush=True)
+            final_response += content
+        elif isinstance(content, list):
+            for item in content:
+                if isinstance(item, dict) and item.get("type") == "text":
+                    text = item.get("text", "")
+                    if text:
+                        print(text, end="", flush=True)
+                        final_response += text
+
+    if not final_response:
+        final_response = "No response generated."
+        print(final_response, end="", flush=True)
+
+    print()
+    return {"message": final_response}
+
 def main():
     setup_logging()
 
@@ -101,7 +126,26 @@ def main():
 
     logger.info("Agent initialized with model: %s", model.model)
 
-    # TODO: Enable input/output from the CLI.
+    print("Hi there, I'm your physics research assistant.")
+    print("I'm here to help you explore new concepts and discuss novel ideas.")
+    print("Type /exit or /quit to stop.")
+
+    # TODO: Consider adding a timeout.
+    while True:
+        try:
+            user_message = input("> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nGoodbye.")
+            break
+
+        if not user_message:
+            continue
+
+        if user_message.lower() in {"exit", "quit", "/exit", "/quit"}:
+            print("Goodbye")
+            break
+
+        chat(user_message, graph)
 
 
 if __name__ == "__main__":
