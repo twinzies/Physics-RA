@@ -7,11 +7,8 @@ from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_anthropic import ChatAnthropic
 from prompts import SYSTEM_PROMPT, FRINGE_RISK_INSTRUCTION, HALLUCINATION_RISK_INSTRUCTION
-from tests.test import BOILERPLATE_TEST, TEST_CASE_1, TEST_CASE_3
 
 logger = logging.getLogger(__name__)
-
-#TODO: Incorporate the guardrails into 1. The system prompt or 2. Guardrails as defined by Langchain.
 
 def setup_logging():
     level = logging.DEBUG if os.getenv("DEBUG") == "1" else logging.INFO
@@ -78,8 +75,10 @@ def search_arxiv(query: str, max_results: int = 5)->list:
     except requests.exceptions.RequestException as e:
         logger.error("Error searching arXiv for query=%s: %s", query, e)
         return f"Error searching arXiv: {e}"
-    
-# TODO: Time permitting, add a tool to get a specific paper.
+
+# TODO: Implement a summarizer middleware for the tool below - useful with memory: https://docs.langchain.com/oss/python/langchain/short-term-memory 
+
+# TODO: Time permitting, add a tool to get a specific paper from Arxiv.
 # @tool
 # def get_arxiv_paper(location: str):
 
@@ -93,25 +92,12 @@ def main():
     graph = create_agent(
     model=model,
     tools=[search_arxiv],
-    system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}')
+    system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}') # Guardrails included within the system prompt.
 
-    #TODO: Move these into the test.py file, as e2e tests.
-    #TODO: Enable input/output from the CLI.
+    logger.info("Agent initialized with model=%s", model)
 
-    # Run the agent for a weather based query.
-    inputs = {"messages": [{"role": "user", "content": BOILERPLATE_TEST}]}
-    for chunk in graph.stream(inputs, stream_mode="updates"):
-        print(chunk)
+    # TODO: Enable input/output from the CLI.
 
-    # Run the agent for a single query that should NOT invoke any tool.
-    inputs = {"messages": [{"role": "user", "content": TEST_CASE_1}]}
-    for chunk in graph.stream(inputs, stream_mode="updates"):
-        print(chunk)
-
-    # Run the agent for a single query that should invoke the arxiv tool.
-    inputs = {"messages": [{"role": "user", "content": TEST_CASE_3}]}
-    for chunk in graph.stream(inputs, stream_mode="updates"):
-        print(chunk)
 
 if __name__ == "__main__":
     main()
