@@ -83,10 +83,6 @@ def search_arxiv(query: str, max_results: int = 5)->list:
 
 # TODO: Implement a summarizer middleware for the tool below - useful with memory: https://docs.langchain.com/oss/python/langchain/short-term-memory 
 
-# TODO: Time permitting, add a tool to get a specific paper from Arxiv.
-# @tool
-# def get_arxiv_paper(location: str):
-
 def chat(message, agent):
     inputs = {"messages": [{"role": "user", "content": message}]}
     final_response = ""
@@ -128,9 +124,10 @@ def main():
 
     print("Hi there, I'm your physics research assistant.")
     print("I'm here to help you explore new concepts and discuss novel ideas.")
-    print("Type /exit or /quit to stop.")
+    print("Type /exit or /quit anytime to stop.")
 
     # TODO: Consider adding a timeout.
+    # TODO: When it uses a tool, the UX displays too much text and responds twice - once before the tool and once after.
     while True:
         try:
             user_message = input("> ").strip()
