@@ -4,6 +4,10 @@ import xml.etree.ElementTree as ET
 
 import requests
 from langchain.agents import create_agent
+from langchain.agents.middleware import (
+    ModelCallLimitMiddleware,
+    SummarizationMiddleware,
+)
 from langchain.tools import tool
 from langchain_anthropic import ChatAnthropic
 from langgraph.checkpoint.memory import InMemorySaver
@@ -82,8 +86,6 @@ def search_arxiv(query: str, max_results: int = 5)->list:
         logger.error("Error searching arXiv for query=%s: %s", query, e)
         return f"Error searching arXiv: {e}"
 
-# TODO: Implement a summarizer middleware for the tool below - useful with memory: https://docs.langchain.com/oss/python/langchain/short-term-memory 
-
 def chat(message, agent, thread_id=1):
     inputs = {"messages": [{"role": "user", "content": message}]}
     final_response = ""
@@ -131,12 +133,29 @@ def main():
     # Configure the model
     model = ChatAnthropic(model="claude-haiku-4-5-20251001")
 
+    # Configure a basic checkpointer
+    checkpointer = InMemorySaver()
+
+    # Configure the middleware
+    middleware = [
+        SummarizationMiddleware(
+            model="claude-haiku-4-5-20251001",
+            trigger=("tokens", 6000),
+            keep=("tokens", 3000)
+        ),
+        ModelCallLimitMiddleware(
+            thread_limit=15,
+            run_limit=5,
+            exit_behavior="error")
+    ]
+
     # Create the agent
     graph = create_agent(
     model=model,
     tools=[search_arxiv],
     system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}',
-    checkpointer=InMemorySaver()) # Guardrails included within the system prompt.
+    checkpointer=checkpointer,
+    middleware=middleware) # Guardrails included within the system prompt.
 
     logger.info("Agent initialized with model: %s", model.model)
 
@@ -146,7 +165,6 @@ def main():
     print("Type /exit or /quit anytime to stop.")
 
     # TODO: Consider adding a timeout.
-    # TODO: When it uses a tool, the UX displays too much text and responds twice - once before the tool and once after.
 
     # Chat loop
     while True:
