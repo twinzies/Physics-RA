@@ -6,6 +6,7 @@ import requests
 from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_anthropic import ChatAnthropic
+from langgraph.checkpoint.memory import InMemorySaver
 from prompts import (
     FRINGE_RISK_INSTRUCTION,
     HALLUCINATION_RISK_INSTRUCTION,
@@ -83,12 +84,15 @@ def search_arxiv(query: str, max_results: int = 5)->list:
 
 # TODO: Implement a summarizer middleware for the tool below - useful with memory: https://docs.langchain.com/oss/python/langchain/short-term-memory 
 
-def chat(message, agent):
+def chat(message, agent, thread_id=1):
     inputs = {"messages": [{"role": "user", "content": message}]}
     final_response = ""
     print("Agent: ", end="", flush=True)
 
-    for chunk in agent.stream(inputs, stream_mode="updates"):
+    for chunk in agent.stream(
+        inputs,  
+        {"configurable": {"thread_id": thread_id}},
+        stream_mode="updates"):
         if "model" not in chunk:
             continue
 
@@ -131,7 +135,8 @@ def main():
     graph = create_agent(
     model=model,
     tools=[search_arxiv],
-    system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}') # Guardrails included within the system prompt.
+    system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}',
+    checkpointer=InMemorySaver()) # Guardrails included within the system prompt.
 
     logger.info("Agent initialized with model: %s", model.model)
 
