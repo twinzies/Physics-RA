@@ -2,20 +2,13 @@ import logging
 import os
 import sys
 from pathlib import Path
-
+import random
 import pytest
-from langchain.agents import create_agent
-from langchain_anthropic import ChatAnthropic
 
 # Ensure `agent/` is importable when running `pytest` from workspace root.
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from main import search_arxiv, setup_logging
-from prompts import (
-	FRINGE_RISK_INSTRUCTION,
-	HALLUCINATION_RISK_INSTRUCTION,
-	SYSTEM_PROMPT,
-)
+from main import build_agent, setup_logging
 
 # E2E test prompts
 TEST_PROMPT_WEATHER = "What is the weather like in Sheffield?"
@@ -27,9 +20,13 @@ pytestmark = pytest.mark.e2e
 
 
 def _run_prompt(graph, prompt: str):
-	inputs = {"messages": [{"role": "user", "content": prompt}]}
-	return list(graph.stream(inputs, stream_mode="updates"))
-
+	inputs = {
+		"messages": [{"role": "user", "content": prompt}]
+	}
+	return list(graph.stream(
+        inputs,  
+        {"configurable": {"thread_id": random.randint(10000, 99990)}},
+        stream_mode="updates"))
 
 def _log_run_result(prompt: str, chunks: list):
 	logging.info("Test prompt: %s", prompt)
@@ -51,14 +48,7 @@ def graph():
 		pytest.skip("ANTHROPIC_API_KEY is required for e2e tests.")
 
 	setup_logging()
-	model = ChatAnthropic(model="claude-haiku-4-5-20251001")
-    
-	return create_agent(
-		model=model,
-		tools=[search_arxiv],
-		system_prompt=f"{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}",
-	)
-
+	return build_agent()
 
 @pytest.mark.parametrize("prompt", [TEST_PROMPT_WEATHER, TEST_PROMPT_MAXWELL, TEST_PROMPT_FRINGE])
 def test_non_search_prompts_do_not_invoke_tools(graph, prompt):

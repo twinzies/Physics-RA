@@ -9,7 +9,8 @@ from langchain.agents.middleware import (
     SummarizationMiddleware,
 )
 from langchain.tools import tool
-from langchain_anthropic import ChatAnthropic
+
+# from langchain_anthropic import ChatAnthropic
 from langgraph.checkpoint.memory import InMemorySaver
 from prompts import (
     FRINGE_RISK_INSTRUCTION,
@@ -17,6 +18,12 @@ from prompts import (
     SYSTEM_PROMPT,
 )
 from pydantic import BaseModel, Field
+
+MODEL = "claude-haiku-4-5-20251001"
+
+# Note, these can be written as fraction of context window size, however harder to test for given project.
+SUMMARIZATION_TRIGGER = 6000 
+SUMMARIZATION_KEEP = 3000
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +126,35 @@ def chat(message, agent, thread_id=1):
     print(final_response)
     return {"message": final_response}
 
+def graph(message, agent, thread_id=1):
+    return
+
+def build_agent():
+    """Build and return the configured agent graph."""
+    checkpointer = InMemorySaver()
+
+    middleware = [
+        SummarizationMiddleware(
+            model=MODEL,
+            trigger=("tokens", SUMMARIZATION_TRIGGER),
+            keep=("tokens", SUMMARIZATION_KEEP),
+        ),
+        ModelCallLimitMiddleware(
+            thread_limit=15,
+            run_limit=5,
+            exit_behavior="error",
+        ),
+    ]
+
+    # Guardrails included within the system prompt.
+    return create_agent(
+        model=MODEL,
+        tools=[search_arxiv],
+        system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}',
+        checkpointer=checkpointer,
+        middleware=middleware,
+    )
+
 def main():
     parser = argparse.ArgumentParser(description="Physics research assistant")
     parser.add_argument(
@@ -130,34 +166,9 @@ def main():
 
     setup_logging(debug=args.debug)
 
-    # Configure the model
-    model = ChatAnthropic(model="claude-haiku-4-5-20251001")
+    graph = build_agent()
 
-    # Configure a basic checkpointer
-    checkpointer = InMemorySaver()
-
-    # Configure the middleware
-    middleware = [
-        SummarizationMiddleware(
-            model="claude-haiku-4-5-20251001",
-            trigger=("tokens", 6000),
-            keep=("tokens", 3000)
-        ),
-        ModelCallLimitMiddleware(
-            thread_limit=15,
-            run_limit=5,
-            exit_behavior="error")
-    ]
-
-    # Create the agent
-    graph = create_agent(
-    model=model,
-    tools=[search_arxiv],
-    system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}',
-    checkpointer=checkpointer,
-    middleware=middleware) # Guardrails included within the system prompt.
-
-    logger.info("Agent initialized with model: %s", model.model)
+    logger.info("Agent initialized with model: %s", MODEL)
 
     # Greet the user
     print("Hi there, I'm your physics research assistant.")
