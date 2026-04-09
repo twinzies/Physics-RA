@@ -47,8 +47,6 @@ def _log_run_result(prompt: str, chunks: list):
 
 @pytest.fixture(scope="module")
 def graph():
-	if os.getenv("RUN_E2E") != "1":
-		pytest.skip("Set RUN_E2E=1 to run e2e tests.")
 	if not os.getenv("ANTHROPIC_API_KEY"):
 		pytest.skip("ANTHROPIC_API_KEY is required for e2e tests.")
 

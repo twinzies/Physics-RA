@@ -1,5 +1,5 @@
+import argparse
 import logging
-import os
 import xml.etree.ElementTree as ET
 
 import requests
@@ -15,8 +15,8 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-def setup_logging():
-    level = logging.DEBUG if os.getenv("DEBUG") == "1" else logging.INFO
+def setup_logging(debug: bool = False):
+    level = logging.DEBUG if debug else logging.INFO
     logging.basicConfig(level=level, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 
 def parse_xml(xml_text)->list:
@@ -114,7 +114,15 @@ def chat(message, agent):
     return {"message": final_response}
 
 def main():
-    setup_logging()
+    parser = argparse.ArgumentParser(description="Physics research assistant")
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug-level logs",
+    )
+    args = parser.parse_args()
+
+    setup_logging(debug=args.debug)
 
     # Configure the model
     model = ChatAnthropic(model="claude-haiku-4-5-20251001")
