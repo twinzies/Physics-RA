@@ -4,14 +4,26 @@ import xml.etree.ElementTree as ET
 
 import requests
 from langchain.agents import create_agent
+from langchain.agents.middleware import (
+    ModelCallLimitMiddleware,
+    SummarizationMiddleware,
+)
 from langchain.tools import tool
-from langchain_anthropic import ChatAnthropic
+
+# from langchain_anthropic import ChatAnthropic
+from langgraph.checkpoint.memory import InMemorySaver
 from prompts import (
     FRINGE_RISK_INSTRUCTION,
     HALLUCINATION_RISK_INSTRUCTION,
     SYSTEM_PROMPT,
 )
 from pydantic import BaseModel, Field
+
+MODEL = "claude-haiku-4-5-20251001"
+
+# Note, these can be written as fraction of context window size, however harder to test for given project.
+SUMMARIZATION_TRIGGER = 6000 
+SUMMARIZATION_KEEP = 3000
 
 logger = logging.getLogger(__name__)
 
@@ -81,14 +93,15 @@ def search_arxiv(query: str, max_results: int = 5)->list:
         logger.error("Error searching arXiv for query=%s: %s", query, e)
         return f"Error searching arXiv: {e}"
 
-# TODO: Implement a summarizer middleware for the tool below - useful with memory: https://docs.langchain.com/oss/python/langchain/short-term-memory 
-
-def chat(message, agent):
+def chat(message, agent, thread_id=1):
     inputs = {"messages": [{"role": "user", "content": message}]}
     final_response = ""
     print("Agent: ", end="", flush=True)
 
-    for chunk in agent.stream(inputs, stream_mode="updates"):
+    for chunk in agent.stream(
+        inputs,  
+        {"configurable": {"thread_id": thread_id}},
+        stream_mode="updates"):
         if "model" not in chunk:
             continue
 
@@ -113,6 +126,35 @@ def chat(message, agent):
     print(final_response)
     return {"message": final_response}
 
+def graph(message, agent, thread_id=1):
+    return
+
+def build_agent():
+    """Build and return the configured agent graph."""
+    checkpointer = InMemorySaver()
+
+    middleware = [
+        SummarizationMiddleware(
+            model=MODEL,
+            trigger=("tokens", SUMMARIZATION_TRIGGER),
+            keep=("tokens", SUMMARIZATION_KEEP),
+        ),
+        ModelCallLimitMiddleware(
+            thread_limit=15,
+            run_limit=5,
+            exit_behavior="error",
+        ),
+    ]
+
+    # Guardrails included within the system prompt.
+    return create_agent(
+        model=MODEL,
+        tools=[search_arxiv],
+        system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}',
+        checkpointer=checkpointer,
+        middleware=middleware,
+    )
+
 def main():
     parser = argparse.ArgumentParser(description="Physics research assistant")
     parser.add_argument(
@@ -124,16 +166,9 @@ def main():
 
     setup_logging(debug=args.debug)
 
-    # Configure the model
-    model = ChatAnthropic(model="claude-haiku-4-5-20251001")
+    graph = build_agent()
 
-    # Create the agent
-    graph = create_agent(
-    model=model,
-    tools=[search_arxiv],
-    system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}') # Guardrails included within the system prompt.
-
-    logger.info("Agent initialized with model: %s", model.model)
+    logger.info("Agent initialized with model: %s", MODEL)
 
     # Greet the user
     print("Hi there, I'm your physics research assistant.")
@@ -141,7 +176,6 @@ def main():
     print("Type /exit or /quit anytime to stop.")
 
     # TODO: Consider adding a timeout.
-    # TODO: When it uses a tool, the UX displays too much text and responds twice - once before the tool and once after.
 
     # Chat loop
     while True:
