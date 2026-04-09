@@ -1,9 +1,13 @@
 .history
+
+# Environment variables
 .env
+
+# Python
 __pycache__/
 
-MLE-project.pdf
 
+# Logs
 logs/
 
 README.md
