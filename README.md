@@ -5,6 +5,8 @@ A conversational CLI agent built with LangChain and LangGraph that acts as a phy
 ## Project Status
 The agent currently uses in-memory checkpointing for stateful conversations along with a single tool. Persistent storage (e.g., SQLite or PostgreSQL) and additional tools may be planned for future iterations.
 
+The tool is synchronous, in this context async does not provide a functional advantage — the agent executes a single tool sequentially in a ReAct loop, so there is no concurrency to exploit.
+
 ## Features
 - **CLI Chat Agent**: Accepts natural-language queries via the command line, invokes the LLM, and autonomously decides whether to search arXiv before generating a final response.
 - **End-to-End Tests**: Parameterized pytest suite that validates tool invocation behavior — verifying that general knowledge prompts do not trigger tool calls, while research-oriented prompts correctly follow instructions and invoke the tool.
