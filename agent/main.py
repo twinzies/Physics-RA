@@ -1,6 +1,7 @@
 import argparse
 import logging
 import xml.etree.ElementTree as ET
+from dotenv import load_dotenv
 
 import requests
 from langchain.agents import create_agent
@@ -26,6 +27,9 @@ SUMMARIZATION_TRIGGER = 6000
 SUMMARIZATION_KEEP = 3000
 
 logger = logging.getLogger(__name__)
+
+# Load environment variables automatically
+load_dotenv()
 
 def setup_logging(debug: bool = False):
     level = logging.DEBUG if debug else logging.INFO

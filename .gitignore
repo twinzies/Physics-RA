@@ -1,7 +1,5 @@
 .history
 
-# Environment variables
-.env
 
 # Python
 __pycache__/
@@ -9,5 +7,3 @@ __pycache__/
 
 # Logs
 logs/
-
-README.md
