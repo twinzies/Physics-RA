@@ -88,24 +88,29 @@ def chat(message, agent):
     final_response = ""
     print("Agent: ", end="", flush=True)
 
-    for model_chunk, _ in agent.stream(inputs, stream_mode="messages"):
-        content = getattr(model_chunk, "content", "")
-        if isinstance(content, str) and content:
-            print(content, end="", flush=True)
-            final_response += content
-        elif isinstance(content, list):
-            for item in content:
-                if isinstance(item, dict) and item.get("type") == "text":
-                    text = item.get("text", "")
-                    if text:
-                        print(text, end="", flush=True)
-                        final_response += text
+    for chunk in agent.stream(inputs, stream_mode="updates"):
+        if "model" not in chunk:
+            continue
+
+        for model_message in chunk["model"].get("messages", []):
+            # Skip intermediary assistant messages that are paired with tool calls.
+            if getattr(model_message, "tool_calls", None):
+                continue
+
+            content = getattr(model_message, "content", "")
+            if isinstance(content, str) and content:
+                final_response = content
+            elif isinstance(content, list):
+                text_parts = []
+                for item in content:
+                    if isinstance(item, dict) and item.get("type") == "text":
+                        text_parts.append(item.get("text", ""))
+                if text_parts:
+                    final_response = "\n".join(text_parts).strip()
 
     if not final_response:
         final_response = "No response generated."
-        print(final_response, end="", flush=True)
-
-    print()
+    print(final_response)
     return {"message": final_response}
 
 def main():
@@ -122,12 +127,15 @@ def main():
 
     logger.info("Agent initialized with model: %s", model.model)
 
+    # Greet the user
     print("Hi there, I'm your physics research assistant.")
     print("I'm here to help you explore new concepts and discuss novel ideas.")
     print("Type /exit or /quit anytime to stop.")
 
     # TODO: Consider adding a timeout.
     # TODO: When it uses a tool, the UX displays too much text and responds twice - once before the tool and once after.
+
+    # Chat loop
     while True:
         try:
             user_message = input("> ").strip()
