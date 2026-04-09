@@ -1,9 +1,9 @@
 import argparse
 import logging
 import xml.etree.ElementTree as ET
-from dotenv import load_dotenv
 
 import requests
+from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain.agents.middleware import (
     ModelCallLimitMiddleware,
@@ -11,7 +11,6 @@ from langchain.agents.middleware import (
 )
 from langchain.tools import tool
 
-# from langchain_anthropic import ChatAnthropic
 from langgraph.checkpoint.memory import InMemorySaver
 from prompts import (
     FRINGE_RISK_INSTRUCTION,
@@ -97,7 +96,7 @@ def search_arxiv(query: str, max_results: int = 5)->list:
         logger.error("Error searching arXiv for query=%s: %s", query, e)
         return f"Error searching arXiv: {e}"
 
-def chat(message, agent, thread_id=1):
+def chat(message, agent, thread_id):
     inputs = {"messages": [{"role": "user", "content": message}]}
     final_response = ""
     print("Agent: ", end="", flush=True)
@@ -129,9 +128,6 @@ def chat(message, agent, thread_id=1):
         final_response = "No response generated."
     print(final_response)
     return {"message": final_response}
-
-def graph(message, agent, thread_id=1):
-    return
 
 def build_agent():
     """Build and return the configured agent graph."""
@@ -174,12 +170,14 @@ def main():
 
     logger.info("Agent initialized with model: %s", MODEL)
 
+    thread_id = 100
+    print(f"Starting a new conversation thread (thread {thread_id}).")
+    
     # Greet the user
-    print("Hi there, I'm your physics research assistant.")
+    print("Hi there, I'm your physics expert assistant.")
+    print("Hi there, I'm your physics expert assistant.")
     print("I'm here to help you explore new concepts and discuss novel ideas.")
-    print("Type /exit or /quit anytime to stop.")
-
-    # TODO: Consider adding a timeout.
+    print("Type /new to start a new thread, /exit or /quit to stop.")
 
     # Chat loop
     while True:
@@ -196,7 +194,12 @@ def main():
             print("Goodbye")
             break
 
-        chat(user_message, graph)
+        if user_message.lower() in {"/new"}:
+            thread_id += 1
+            print(f"Starting a new conversation thread (thread {thread_id}).")
+            continue
+
+        chat(user_message, graph, thread_id=thread_id)
 
 
 if __name__ == "__main__":
