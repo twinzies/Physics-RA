@@ -46,6 +46,9 @@ When running `pytest`, e2e test logs are written under `logs/` (for example `log
 
 1. **Setup and install the requirements in a virtual environment (run once)**
    ```bash
+   # If uv is not installed yet:
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+
    uv venv .venv
    uv pip install --python .venv/bin/python -r requirements.txt
    ```

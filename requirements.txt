@@ -3,3 +3,4 @@ langchain-anthropic
 langgraph
 python-dotenv
 pytest
+requests
