@@ -10,7 +10,6 @@ from langchain.agents.middleware import (
     SummarizationMiddleware,
 )
 from langchain.tools import tool
-
 from langgraph.checkpoint.memory import InMemorySaver
 from prompts import (
     FRINGE_RISK_INSTRUCTION,
@@ -129,7 +128,7 @@ def chat(message, agent, thread_id):
     print(final_response)
     return {"message": final_response}
 
-def build_agent():
+def build_agent(thread_limit=15, run_limit=5):
     """Build and return the configured agent graph."""
     checkpointer = InMemorySaver()
 
@@ -140,8 +139,8 @@ def build_agent():
             keep=("tokens", SUMMARIZATION_KEEP),
         ),
         ModelCallLimitMiddleware(
-            thread_limit=15,
-            run_limit=5,
+            thread_limit=thread_limit,
+            run_limit=run_limit,
             exit_behavior="error",
         ),
     ]
@@ -174,7 +173,6 @@ def main():
     print(f"Starting a new conversation thread (thread {thread_id}).")
     
     # Greet the user
-    print("Hi there, I'm your physics expert assistant.")
     print("Hi there, I'm your physics expert assistant.")
     print("I'm here to help you explore new concepts and discuss novel ideas.")
     print("Type /new to start a new thread, /exit or /quit to stop.")
