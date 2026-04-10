@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from langchain.agents.middleware.model_call_limit import ModelCallLimitExceededError
 
-# Ensure `agent/` is importable when running `pytest` from workspace root.
+# Ensure `agent/` is importable when run from root.
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from main import build_agent, setup_logging
