@@ -7,7 +7,31 @@ It uses Claude Haiku 4.5 as the underlying model, with checkpointed memory for m
 ## Project Status
 The agent currently uses in-memory checkpointing for stateful conversations along with a single tool. Persistent storage (e.g., SQLite or PostgreSQL) and additional tools may be planned for future iterations.
 
-The tool is synchronous, in this context async does not provide a functional advantage — the agent executes a single tool sequentially in a ReAct loop, so there is no concurrency to exploit.
+The tool is synchronous, in this context async does not provide a functional advantage as the agent executes a single tool sequentially in a ReAct loop, so there is no concurrency to exploit.
+
+## Repository Structure
+
+From the repository root:
+
+```text
+.
+├── README.md
+├── requirements.txt
+├── agent/
+│   ├── main.py
+│   ├── prompts.py
+│   └── tests/
+│       └── test_e2e.py
+└── logs/
+```
+
+Key files and folders:
+- `agent/main.py`: CLI entrypoint and agent wiring.
+- `agent/tests/test_e2e.py`: End-to-end tests for tool usage and run-limit behavior.
+- `logs/`: Runtime and test logs.
+
+When running `pytest`, e2e test logs are written under `logs/` (for example `logs/test_e2e.log`). The folder is created automatically if it does not already exist.
+
 
 ## Features
 - **CLI Chat Agent**: Accepts natural-language queries via the command line, invokes the LLM, and autonomously decides whether to search arXiv before generating a final response.
@@ -42,6 +66,14 @@ The tool is synchronous, in this context async does not provide a functional adv
    python agent/main.py --debug
    ```
 
+## Run End-to-end tests
+
+```bash
+source .venv/bin/activate
+
+python -m pytest -m e2e --log-cli-level=INFO
+```
+
 ## Sample Prompts
 
 Here are some different categories of prompts to quickly observe different agent behaviors.
@@ -64,11 +96,4 @@ Here are some different categories of prompts to quickly observe different agent
 - Hi, my name is Tara. I am learning about cosmic inflation. Explain it to me at a high level, and then I will ask follow-up questions.
 
 
-## Run End-to-end tests
-
-```bash
-source .venv/bin/activate
-
-python -m pytest -m e2e --log-cli-level=INFO
-```
 
