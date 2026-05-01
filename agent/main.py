@@ -64,6 +64,44 @@ class ArxivSearchInput(BaseModel):
     query: str = Field(..., description="The keyword or topic string to search for on Arxiv.")
     max_results: int = Field(default=5, description="The maximum number of results to return.")
 
+import asyncio
+
+######## Concurrency conversion ########
+import httpx
+
+
+@tool(args_schema=ArxivSearchInput)
+async def search_arxiv_async(query: str, max_results: int = 5)->list:
+    """Searches arXiv for a given search query with asynchronous concurrency and returns a list of the top results.
+    """
+    logger.info("Async tool search_arxiv called with query=%s", query)
+
+    try:
+        url = "http://export.arxiv.org/api/query?"
+        params = {
+            "search_query": query,
+            "start":0,
+            "max_results": max_results
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, params=params, timeout=10)
+            response.raise_for_status()
+
+        logger.debug(
+            "arXiv response: status=%s content_type=%s",
+            response.status_code,
+            response.headers.get("Content-Type", ""),
+        )
+
+        # Parse the response and return the top 5 results
+        papers = parse_xml(response.text)
+        return papers
+    
+    except httpx.RequestError as e:
+        logger.error("Error searching arXiv for query=%s: %s", query, e)
+        return f"Error searching arXiv: {e}"
+
 @tool(args_schema=ArxivSearchInput)
 def search_arxiv(query: str, max_results: int = 5)->list:
     """Searches arXiv for a given search query and returns a list of the top results.
@@ -95,12 +133,13 @@ def search_arxiv(query: str, max_results: int = 5)->list:
         logger.error("Error searching arXiv for query=%s: %s", query, e)
         return f"Error searching arXiv: {e}"
 
-def chat(message, agent, thread_id):
+async def chat(message, agent, thread_id):
     inputs = {"messages": [{"role": "user", "content": message}]}
     final_response = ""
     print("Agent: ", end="", flush=True)
 
-    for chunk in agent.stream(
+#### For loops will need to be converted to async for loops ####
+    async for chunk in agent.astream(
         inputs,  
         {"configurable": {"thread_id": thread_id}},
         stream_mode="updates"):
@@ -148,7 +187,7 @@ def build_agent(thread_limit=15, run_limit=5):
     # Guardrails included within the system prompt.
     return create_agent(
         model=MODEL,
-        tools=[search_arxiv],
+        tools=[search_arxiv_async],
         system_prompt=f'{SYSTEM_PROMPT}\n{FRINGE_RISK_INSTRUCTION}\n{HALLUCINATION_RISK_INSTRUCTION}',
         checkpointer=checkpointer,
         middleware=middleware,
@@ -197,8 +236,7 @@ def main():
             print(f"Starting a new conversation thread (thread {thread_id}).")
             continue
 
-        chat(user_message, graph, thread_id=thread_id)
-
+        asyncio.run(chat(user_message, graph, thread_id=thread_id))
 
 if __name__ == "__main__":
     main()
