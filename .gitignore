@@ -1,5 +1,7 @@
 .history
 
+# API key
+.env
 
 # Python
 __pycache__/

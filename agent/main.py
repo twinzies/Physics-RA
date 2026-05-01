@@ -131,7 +131,7 @@ def chat(message, agent, thread_id):
 def build_agent(thread_limit=15, run_limit=5):
     """Build and return the configured agent graph."""
     checkpointer = InMemorySaver()
-
+    
     middleware = [
         SummarizationMiddleware(
             model=MODEL,
