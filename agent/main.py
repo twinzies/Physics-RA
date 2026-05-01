@@ -5,17 +5,12 @@ import xml.etree.ElementTree as ET
 import requests
 from dotenv import load_dotenv
 from langchain.agents import create_agent
-from langchain.agents.middleware import (
-    ModelCallLimitMiddleware,
-    SummarizationMiddleware,
-)
+from langchain.agents.middleware import (ModelCallLimitMiddleware,
+                                         SummarizationMiddleware)
 from langchain.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
-from prompts import (
-    FRINGE_RISK_INSTRUCTION,
-    HALLUCINATION_RISK_INSTRUCTION,
-    SYSTEM_PROMPT,
-)
+from prompts import (FRINGE_RISK_INSTRUCTION, HALLUCINATION_RISK_INSTRUCTION,
+                     SYSTEM_PROMPT)
 from pydantic import BaseModel, Field
 
 MODEL = "claude-haiku-4-5-20251001"
@@ -77,7 +72,7 @@ async def search_arxiv_async(query: str, max_results: int = 5)->list:
     logger.info("Async tool search_arxiv called with query=%s", query)
 
     try:
-        url = "http://export.arxiv.org/api/query?"
+        url = "https://export.arxiv.org/api/query?"
         params = {
             "search_query": query,
             "start":0,
@@ -236,6 +231,7 @@ def main():
             print(f"Starting a new conversation thread (thread {thread_id}).")
             continue
 
+        ### Async event loop ###
         asyncio.run(chat(user_message, graph, thread_id=thread_id))
 
 if __name__ == "__main__":
