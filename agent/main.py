@@ -9,6 +9,11 @@ from langchain.agents.middleware import (
     ModelCallLimitMiddleware,
     SummarizationMiddleware,
 )
+
+# Packages needed for concurrency
+import asyncio # Foundation for async programming.
+import httpx # replacement for python requests which provides an async client.
+
 from langchain.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 from prompts import (
@@ -63,11 +68,6 @@ def parse_xml(xml_text)->list:
 class ArxivSearchInput(BaseModel):
     query: str = Field(..., description="The keyword or topic string to search for on Arxiv.")
     max_results: int = Field(default=5, description="The maximum number of results to return.")
-
-import asyncio
-
-######## Concurrency conversion ########
-import httpx
 
 
 @tool(args_schema=ArxivSearchInput)
@@ -236,6 +236,8 @@ def main():
             print(f"Starting a new conversation thread (thread {thread_id}).")
             continue
 
+        ### This code uses COROUTINE based concurrency ###
+        # The event loop for asyncio. All tasks are launched from one event loop.
         asyncio.run(chat(user_message, graph, thread_id=thread_id))
 
 if __name__ == "__main__":

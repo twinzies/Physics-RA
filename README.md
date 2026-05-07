@@ -77,6 +77,22 @@ source .venv/bin/activate
 python -m pytest -m e2e --log-cli-level=INFO
 ```
 
+## Notes on Async programming
+
+The two methodologies for concurrency are:
+
+1. Thread-based concurrency (thread pool + callbacks).  
+2. Coroutine-based concurrency (asyncio: async/await + event loop) -- this code.
+
+Key differences in practice:
+
+1. Scheduling model: threads are preemptively scheduled by the OS; coroutines are cooperatively scheduled by the event loop at await points.  
+2. Parallelism: threads can run truly in parallel for blocking I/O (and for CPU in other runtimes/processes); coroutines are usually single-threaded unless you explicitly offload work.  
+3. Coding style: threads use callbacks, locks, queues, shared-state protection; coroutines use async def, await, and async primitives.  
+4. Overhead: threads have higher memory/context-switch cost; coroutines are lighter and scale to many concurrent I/O tasks.  
+5. Safety/debugging: threads risk race conditions and lock bugs; coroutines avoid many race issues but can still have ordering/cancellation complexity.  
+6. Best fit: thread pools are great for wrapping blocking libraries; coroutines are best when your stack is natively async end-to-end.
+
 ## Sample Prompts
 
 Here are some different categories of prompts to quickly observe different agent behaviors.
